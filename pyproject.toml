@@ -1,0 +1,25 @@
+[project]
+name = "zenn-stats-crawler"
+version = "0.1.0"
+description = "Periodic statistics crawler for Zenn articles with anonymization and SQLite persistence"
+authors = [
+    { name = "northward", email = "196759132+northward1@users.noreply.github.com" }
+]
+readme = "README.md"
+requires-python = ">=3.12"
+dependencies = [
+    "requests>=2.34.2",
+    "tqdm>=4.70.1",
+]
+
+[project.scripts]
+zenn-stats-crawler = "zenn_stats_crawler.cli:main"
+
+[build-system]
+requires = ["uv_build>=0.13.0,<0.14.0"]
+build-backend = "uv_build"
+
+[dependency-groups]
+dev = [
+    "pytest>=9.1.1",
+]

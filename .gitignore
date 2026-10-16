@@ -218,3 +218,15 @@ __marimo__/
 
 # Streamlit
 .streamlit/secrets.toml
+
+# Environments
+.venv/
+env/
+venv/
+
+# SQLite database & journals
+data/
+*.db
+*.db-wal
+*.db-shm
+*.db-journal
