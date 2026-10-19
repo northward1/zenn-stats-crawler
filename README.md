@@ -4,6 +4,18 @@
 
 プライバシーや利用規約、倫理的な配慮のため、URLや記事タイトル、ユーザー名、Publication名をソルト付き SHA-256 でハッシュ化して保存しています。
 
+## データベースのダウンロード
+
+最新の収集済み SQLite データベースは、GitHub Releases から直接ダウンロード可能です。
+
+* **[最新版データベース (zenn_stats.db.gz)](https://github.com/northward1/zenn-stats-crawler/releases/latest/download/zenn_stats.db.gz)**
+
+```bash
+# ダウンロードと解凍
+curl -LO https://github.com/northward1/zenn-stats-crawler/releases/latest/download/zenn_stats.db.gz
+gzip -d zenn_stats.db.gz
+```
+
 ## セットアップ
 
 ### 必須環境
