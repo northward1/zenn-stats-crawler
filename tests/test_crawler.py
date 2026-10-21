@@ -57,6 +57,44 @@ def test_sitemap_parsing():
     assert urls[0].loc == "https://zenn.dev/alice/articles/sample-slug"
 
 
+def test_fetch_all_urls_from_sitemaps_newest_first():
+    from unittest.mock import MagicMock
+    from zenn_stats_crawler.config import Config
+    from zenn_stats_crawler.crawler import StatsCrawler
+    from zenn_stats_crawler.sitemap import SitemapUrlInfo
+
+    crawler = StatsCrawler(config=Config(hash_salt="test"))
+    crawler.sitemap_crawler.fetch_sitemap_urls = MagicMock(
+        return_value=[
+            "https://zenn.dev/sitemaps/article1.xml.gz",
+            "https://zenn.dev/sitemaps/article2.xml.gz",
+        ]
+    )
+
+    def mock_fetch_urls(s_url):
+        if "article1" in s_url:
+            return [
+                SitemapUrlInfo(loc="https://zenn.dev/u/articles/a1-1"),
+                SitemapUrlInfo(loc="https://zenn.dev/u/articles/a1-2"),
+            ]
+        else:
+            return [
+                SitemapUrlInfo(loc="https://zenn.dev/u/articles/a2-1"),
+                SitemapUrlInfo(loc="https://zenn.dev/u/articles/a2-2"),
+            ]
+
+    crawler.sitemap_crawler.fetch_urls_from_sitemap = MagicMock(side_effect=mock_fetch_urls)
+
+    urls = crawler.fetch_all_urls_from_sitemaps(show_progress=False)
+    # article2(最新サイトマップ)の末尾から先頭、続いてarticle1の末尾から先頭の順になること
+    assert urls == [
+        "https://zenn.dev/u/articles/a2-2",
+        "https://zenn.dev/u/articles/a2-1",
+        "https://zenn.dev/u/articles/a1-2",
+        "https://zenn.dev/u/articles/a1-1",
+    ]
+
+
 def test_article_parsing():
     html = """
     <!DOCTYPE html>

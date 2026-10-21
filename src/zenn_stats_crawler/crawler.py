@@ -42,32 +42,45 @@ class StatsCrawler:
         show_progress: bool = True,
     ) -> List[str]:
         """
-        サイトマップインデックスから個別サイトマップを取得し、すべてのURLを抽出・正規化して返す
+        サイトマップインデックスから個別サイトマップを取得し、すべてのURLを抽出・正規化して返す。
+        新しい記事から優先的にクロールするため、サイトマップおよびサイトマップ内のURLを逆順（最新順）で走査する。
         """
-        logger.info(f"サイトマップインデックスを取得中: {self.config.sitemap_index_url}")
+        logger.info(
+            f"サイトマップインデックスを取得中: {self.config.sitemap_index_url}"
+        )
         sitemap_urls = self.sitemap_crawler.fetch_sitemap_urls(
             self.config.sitemap_index_url, pattern=sitemap_pattern
         )
 
+        # 新しい記事を含む最新のサイトマップから順に走査するために逆順にする
+        sitemap_urls.reverse()
+
         if max_sitemaps is not None and max_sitemaps > 0:
             sitemap_urls = sitemap_urls[:max_sitemaps]
-            logger.info(f"サイトマップ数を先頭 {max_sitemaps} 件に制限しました。")
+            logger.info(f"サイトマップ数を最新 {max_sitemaps} 件に制限しました。")
 
         all_urls: List[str] = []
         seen = set()
 
-        for s_url in tqdm(sitemap_urls, desc="サイトマップ走査", disable=not show_progress):
+        for s_url in tqdm(
+            sitemap_urls, desc="サイトマップ走査", disable=not show_progress
+        ):
             try:
                 items = self.sitemap_crawler.fetch_urls_from_sitemap(s_url)
-                for item in items:
+                # サイトマップ内の新しい記事（末尾側）から走査するために逆順にする
+                for item in reversed(items):
                     norm = normalize_url(item.loc)
                     if norm and norm not in seen:
                         seen.add(norm)
                         all_urls.append(norm)
             except Exception as exc:
-                logger.warning(f"サイトマップの取得・パースに失敗しました ({s_url}): {exc}")
+                logger.warning(
+                    f"サイトマップの取得・パースに失敗しました ({s_url}): {exc}"
+                )
 
-        logger.info(f"全サイトマップから合計 {len(all_urls)} 件のユニークURLを収集しました。")
+        logger.info(
+            f"全サイトマップから合計 {len(all_urls)} 件のユニークURLを収集しました。"
+        )
         return all_urls
 
     def run(
@@ -134,7 +147,9 @@ class StatsCrawler:
 
         if limit is not None and limit > 0:
             target_urls = target_urls[:limit]
-            logger.info(f"取得上限数 (--limit) により、先頭 {limit} 件に絞り込みました。")
+            logger.info(
+                f"取得上限数 (--limit) により、先頭 {limit} 件に絞り込みました。"
+            )
 
         stats = {
             "total_found": len(urls),
@@ -151,7 +166,9 @@ class StatsCrawler:
         # 4. クロール実行
         logger.info(f"記事クロールを開始します (対象: {len(target_urls)} 件)")
 
-        with tqdm(total=len(target_urls), desc="記事データ取得", disable=not show_progress) as pbar:
+        with tqdm(
+            total=len(target_urls), desc="記事データ取得", disable=not show_progress
+        ) as pbar:
             for url in target_urls:
                 norm_url = normalize_url(url)
                 u_hash = hash_text(norm_url, self.config.hash_salt)
@@ -223,4 +240,3 @@ class StatsCrawler:
             f"クロール完了: 成功={stats['crawled_success']} 件, 失敗={stats['crawled_failed']} 件"
         )
         return stats
-
