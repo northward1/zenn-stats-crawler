@@ -41,14 +41,20 @@ def escape_markdown_table_cell(text: str) -> str:
 
 
 def format_display_datetime(iso_str: Optional[str]) -> str:
-    """ISO8601形式の公開日時を表示用 (YYYY-MM-DD HH:MM:SS) に整形する"""
+    """ISO8601形式の公開日時を表示用 (MM/DD HH:MM) に整形する"""
     if not iso_str:
         return "-"
-    if "T" in iso_str:
-        dt_part, tz_part = iso_str.split("T")
-        time_part = tz_part.split(".")[0] if "." in tz_part else tz_part[:8]
-        return f"{dt_part} {time_part}"
-    return iso_str
+    try:
+        dt = datetime.fromisoformat(iso_str)
+        return dt.strftime("%m/%d %H:%M")
+    except Exception:
+        if "T" in iso_str:
+            date_part, time_part = iso_str.split("T")
+            parts = date_part.split("-")
+            mm_dd = f"{parts[1]}/{parts[2]}" if len(parts) >= 3 else date_part
+            hh_mm = time_part[:5]
+            return f"{mm_dd} {hh_mm}"
+        return iso_str
 
 
 def parse_timeline_item_from_html(html: str, url: str) -> Optional[TimelineItem]:
@@ -171,10 +177,10 @@ def crawl_recent_timeline_items(
 def format_timeline_table(items: List[TimelineItem]) -> str:
     """
     記事一覧を指定フォーマットのMarkdownテーブルに整形する
-    カラム: | タイトル | ユーザー名 | 投稿日時 | いいね数 |
+    カラム: | タイトル | ユーザー名 | 投稿日時 | ♡ |
     """
     lines: List[str] = [
-        "| タイトル | ユーザー名 | 投稿日時 | いいね数 |",
+        "| タイトル | ユーザー名 | 投稿日時 | ♡ |",
         "| :--- | :--- | :---: | :---: |",
     ]
 
@@ -182,18 +188,15 @@ def format_timeline_table(items: List[TimelineItem]) -> str:
         safe_title = escape_markdown_table_cell(item.title)
         title_link = f"[{safe_title}]({item.url})"
 
+        user_display = item.display_name or item.username
+        safe_user = escape_markdown_table_cell(user_display)
         if item.username and item.username != "不明":
-            if item.display_name and item.display_name != item.username:
-                safe_name = escape_markdown_table_cell(item.display_name)
-                user_label = f"{safe_name} (@{item.username})"
-            else:
-                user_label = f"@{item.username}"
-            user_link = f"[{user_label}](https://zenn.dev/{item.username})"
+            user_link = f"[{safe_user}](https://zenn.dev/{item.username})"
         else:
-            user_link = "不明"
+            user_link = safe_user or "不明"
 
         dt_str = format_display_datetime(item.published_at)
-        likes_str = f"❤️ {item.liked_count}"
+        likes_str = str(item.liked_count)
 
         lines.append(f"| {title_link} | {user_link} | {dt_str} | {likes_str} |")
 
