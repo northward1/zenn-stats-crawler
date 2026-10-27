@@ -33,6 +33,8 @@ class TimelineItem:
     display_name: str
     published_at: str
     liked_count: int
+    publication_name: Optional[str] = None
+    publication_display_name: Optional[str] = None
 
 
 def escape_markdown_table_cell(text: str) -> str:
@@ -88,6 +90,13 @@ def parse_timeline_item_from_html(html: str, url: str) -> Optional[TimelineItem]
     published_at = article.get("publishedAt") or ""
     liked_count = article.get("likedCount") or 0
 
+    publication = page_props.get("publication") or article.get("publication")
+    pub_name = None
+    pub_display_name = None
+    if publication and isinstance(publication, dict):
+        pub_name = publication.get("name")
+        pub_display_name = publication.get("displayName") or pub_name
+
     return TimelineItem(
         url=normalize_url(url),
         slug=slug,
@@ -97,6 +106,8 @@ def parse_timeline_item_from_html(html: str, url: str) -> Optional[TimelineItem]
         display_name=display_name or username or "不明",
         published_at=published_at,
         liked_count=liked_count,
+        publication_name=pub_name,
+        publication_display_name=pub_display_name,
     )
 
 
@@ -197,10 +208,18 @@ def format_timeline_table(items: List[TimelineItem]) -> str:
         else:
             user_link = safe_user or "不明"
 
+        if item.publication_name:
+            pub_display = item.publication_display_name or item.publication_name
+            safe_pub = escape_markdown_table_cell(pub_display)
+            pub_link = f"[{safe_pub}](https://zenn.dev/p/{item.publication_name})"
+            user_col = f"{user_link} in {pub_link}"
+        else:
+            user_col = user_link
+
         dt_str = format_display_datetime(item.published_at)
         likes_str = str(item.liked_count)
 
-        lines.append(f"| {favicon} | {title_link} | {user_link} | {dt_str} | {likes_str} |")
+        lines.append(f"| {favicon} | {title_link} | {user_col} | {dt_str} | {likes_str} |")
 
     return "\n".join(lines)
 

@@ -43,6 +43,10 @@ def test_parse_timeline_item_from_html():
                     "username": "alice",
                     "name": "Alice",
                 },
+                "publication": {
+                    "name": "techcorp",
+                    "displayName": "Tech Corp Blog",
+                },
             }
         }
     }
@@ -57,6 +61,8 @@ def test_parse_timeline_item_from_html():
     assert item.display_name == "Alice"
     assert item.published_at == "2026-10-27T10:00:00.000+09:00"
     assert item.liked_count == 5
+    assert item.publication_name == "techcorp"
+    assert item.publication_display_name == "Tech Corp Blog"
 
 
 def test_format_timeline_table():
@@ -70,6 +76,8 @@ def test_format_timeline_table():
             display_name="Alice",
             published_at="2026-10-27T10:00:00.000+09:00",
             liked_count=3,
+            publication_name="techcorp",
+            publication_display_name="Tech Corp Blog",
         ),
         TimelineItem(
             url="https://zenn.dev/bob/articles/art2",
@@ -88,7 +96,7 @@ def test_format_timeline_table():
 
     assert lines[0] == "| | タイトル | ユーザー名 | 投稿日時 | ♡ |"
     assert lines[1] == "| :---: | :--- | :--- | :---: | :---: |"
-    assert r"📘 | [First Article \| Review](https://zenn.dev/alice/articles/art1) | [Alice](https://zenn.dev/alice) | 10/27 10:00 | 3" in lines[2]
+    assert r"📘 | [First Article \| Review](https://zenn.dev/alice/articles/art1) | [Alice](https://zenn.dev/alice) in [Tech Corp Blog](https://zenn.dev/p/techcorp) | 10/27 10:00 | 3" in lines[2]
     assert r"💡 | [Second Article](https://zenn.dev/bob/articles/art2) | [bob](https://zenn.dev/bob) | 10/27 09:00 | 0" in lines[3]
 
 
