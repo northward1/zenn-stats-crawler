@@ -5,8 +5,9 @@ set -euo pipefail
 PROJECT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
 cd "$PROJECT_DIR"
 
-# cron 実行時にも uv, gh, python 等が見つかるように PATH を明示
-export PATH="$HOME/.local/bin:$HOME/.cargo/bin:/usr/local/bin:/usr/bin:/bin:$PATH"
+# cron 実行時にも uv, gh, python, zenn (volta/npm) 等が見つかるように PATH を明示
+export VOLTA_HOME="${VOLTA_HOME:-$HOME/.volta}"
+export PATH="$VOLTA_HOME/bin:$HOME/.local/bin:$HOME/.cargo/bin:/usr/local/bin:/usr/bin:/bin:$PATH"
 
 # .env ファイルが存在すれば読み込む
 if [ -f "$PROJECT_DIR/.env" ]; then

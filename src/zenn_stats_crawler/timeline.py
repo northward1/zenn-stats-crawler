@@ -6,8 +6,10 @@ from dataclasses import dataclass
 from datetime import datetime
 import json
 import logging
+import os
 from pathlib import Path
 import re
+import shutil
 import subprocess
 import tempfile
 from typing import List, Optional
@@ -262,15 +264,32 @@ def split_markdown_for_scrap(
     return [part1_md, part2_md]
 
 
+def resolve_zenn_command() -> str:
+    """zenn コマンドのパスを探索・解決する"""
+    cmd = shutil.which("zenn")
+    if cmd:
+        return cmd
+
+    volta_bin = Path.home() / ".volta" / "bin"
+    volta_zenn = volta_bin / "zenn"
+    if volta_zenn.exists():
+        if str(volta_bin) not in os.environ.get("PATH", ""):
+            os.environ["PATH"] = f"{volta_bin}:{os.environ.get('PATH', '')}"
+        return str(volta_zenn)
+
+    return "zenn"
+
+
 def post_to_scrap(
     scrap_slug_or_url: str,
     markdown_content: str,
-    zenn_cmd: str = "zenn",
+    zenn_cmd: Optional[str] = None,
 ) -> str:
     """
     Zenn CLI を呼び出して既存の Scrap に新しいコメントを投稿する。
     戻り値として投稿されたコメントのURLを返す。
     """
+    zenn_cmd = zenn_cmd or resolve_zenn_command()
     with tempfile.NamedTemporaryFile("w", encoding="utf-8", suffix=".md", delete=False) as f:
         f.write(markdown_content)
         temp_file_path = f.name
@@ -311,12 +330,13 @@ def create_scrap(
     unlisted: bool = True,
     disallow_others_post: bool = True,
     topics: Optional[List[str]] = None,
-    zenn_cmd: str = "zenn",
+    zenn_cmd: Optional[str] = None,
 ) -> str:
     """
     Zenn CLI を呼び出して新規 Scrap を作成する。
     戻り値として作成された Scrap の URL を返す。
     """
+    zenn_cmd = zenn_cmd or resolve_zenn_command()
     with tempfile.NamedTemporaryFile("w", encoding="utf-8", suffix=".md", delete=False) as f:
         f.write(markdown_content)
         temp_file_path = f.name
@@ -358,10 +378,11 @@ def create_scrap(
         Path(temp_file_path).unlink(missing_ok=True)
 
 
-def get_scrap_details(scrap_slug_or_url: str, zenn_cmd: str = "zenn") -> dict:
+def get_scrap_details(scrap_slug_or_url: str, zenn_cmd: Optional[str] = None) -> dict:
     """
     Zenn CLI を呼び出して Scrap の詳細およびコメント一覧を取得する。
     """
+    zenn_cmd = zenn_cmd or resolve_zenn_command()
     cmd = [
         zenn_cmd,
         "scrap",
@@ -383,11 +404,12 @@ def get_scrap_details(scrap_slug_or_url: str, zenn_cmd: str = "zenn") -> dict:
 def delete_scrap_comment(
     scrap_slug_or_url: str,
     comment_slug: str,
-    zenn_cmd: str = "zenn",
+    zenn_cmd: Optional[str] = None,
 ) -> bool:
     """
     Zenn CLI を呼び出して特定のコメントを削除する。
     """
+    zenn_cmd = zenn_cmd or resolve_zenn_command()
     cmd = [
         zenn_cmd,
         "scrap",
@@ -410,7 +432,7 @@ def delete_scrap_comment(
 def delete_old_timeline_comments(
     scrap_slug_or_url: str,
     keep_root: bool = True,
-    zenn_cmd: str = "zenn",
+    zenn_cmd: Optional[str] = None,
 ) -> int:
     """
     Scrap 内の古いコメントを削除する。
@@ -418,6 +440,7 @@ def delete_old_timeline_comments(
     2番目以降のコメント（過去のタイムライン）のみを削除する。
     削除したコメント数を返す。
     """
+    zenn_cmd = zenn_cmd or resolve_zenn_command()
     try:
         details = get_scrap_details(scrap_slug_or_url, zenn_cmd=zenn_cmd)
     except Exception as exc:
