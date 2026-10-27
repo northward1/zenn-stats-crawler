@@ -86,10 +86,10 @@ def test_format_timeline_table():
     table = format_timeline_table(items)
     lines = table.strip().split("\n")
 
-    assert lines[0] == "| タイトル | ユーザー名 | 投稿日時 | ♡ |"
-    assert lines[1] == "| :--- | :--- | :---: | :---: |"
-    assert r"[First Article \| Review](https://zenn.dev/alice/articles/art1) | [Alice](https://zenn.dev/alice) | 10/27 10:00 | 3" in lines[2]
-    assert r"[Second Article](https://zenn.dev/bob/articles/art2) | [bob](https://zenn.dev/bob) | 10/27 09:00 | 0" in lines[3]
+    assert lines[0] == "| | タイトル | ユーザー名 | 投稿日時 | ♡ |"
+    assert lines[1] == "| :---: | :--- | :--- | :---: | :---: |"
+    assert r"📘 | [First Article \| Review](https://zenn.dev/alice/articles/art1) | [Alice](https://zenn.dev/alice) | 10/27 10:00 | 3" in lines[2]
+    assert r"💡 | [Second Article](https://zenn.dev/bob/articles/art2) | [bob](https://zenn.dev/bob) | 10/27 09:00 | 0" in lines[3]
 
 
 def test_split_markdown_for_scrap():

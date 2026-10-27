@@ -177,14 +177,15 @@ def crawl_recent_timeline_items(
 def format_timeline_table(items: List[TimelineItem]) -> str:
     """
     記事一覧を指定フォーマットのMarkdownテーブルに整形する
-    カラム: | タイトル | ユーザー名 | 投稿日時 | ♡ |
+    カラム: | (favicon) | タイトル | ユーザー名 | 投稿日時 | ♡ |
     """
     lines: List[str] = [
-        "| タイトル | ユーザー名 | 投稿日時 | ♡ |",
-        "| :--- | :--- | :---: | :---: |",
+        "| | タイトル | ユーザー名 | 投稿日時 | ♡ |",
+        "| :---: | :--- | :--- | :---: | :---: |",
     ]
 
     for item in items:
+        favicon = item.emoji or "📝"
         safe_title = escape_markdown_table_cell(item.title)
         title_link = f"[{safe_title}]({item.url})"
 
@@ -198,7 +199,7 @@ def format_timeline_table(items: List[TimelineItem]) -> str:
         dt_str = format_display_datetime(item.published_at)
         likes_str = str(item.liked_count)
 
-        lines.append(f"| {title_link} | {user_link} | {dt_str} | {likes_str} |")
+        lines.append(f"| {favicon} | {title_link} | {user_link} | {dt_str} | {likes_str} |")
 
     return "\n".join(lines)
 
