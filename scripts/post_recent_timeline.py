@@ -100,8 +100,8 @@ def main():
         logger.warning("クロール結果が0件でした。終了します。")
         return
 
-    now_jst = datetime.now(JST).strftime("%Y-%m-%d %H:%M:%S")
-    header_title = f"### 📅 {now_jst} 観測分 (最新 {len(items)} 件)"
+    now_jst = datetime.now(JST).strftime("%Y/%m/%d %H:%M")
+    header_title = f"### 新着タイムライン\n\n* 最終更新日時: {now_jst}"
 
     # 2. Markdownファイルの保存 (指定時)
     if args.output:

@@ -253,8 +253,8 @@ def split_markdown_for_scrap(
     part1_items = items[:mid]
     part2_items = items[mid:]
 
-    part1_title = f"{base_title} (1〜{len(part1_items)}件)"
-    part2_title = f"{base_title} ({len(part1_items) + 1}〜{len(items)}件)"
+    part1_title = base_title
+    part2_title = "### 新着タイムライン (続き)"
 
     part1_md = format_timeline_markdown(part1_items, header_title=part1_title)
     part2_md = format_timeline_markdown(part2_items, header_title=part2_title)
