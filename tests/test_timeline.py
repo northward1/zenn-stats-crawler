@@ -117,3 +117,35 @@ def test_split_markdown_for_scrap():
     assert "(1〜10件)" in chunks_split[0]
     assert "(11〜20件)" in chunks_split[1]
 
+
+def test_delete_old_timeline_comments(monkeypatch):
+    from zenn_stats_crawler.timeline import delete_old_timeline_comments
+
+    mock_details = {
+        "scrap": {"slug": "test_scrap"},
+        "comments": [
+            {"slug": "c0_root_desc"},
+            {"slug": "c1_old_timeline"},
+            {"slug": "c2_old_timeline"},
+        ],
+    }
+
+    deleted_slugs = []
+
+    def mock_get_scrap_details(scrap_slug_or_url, zenn_cmd="zenn"):
+        return mock_details
+
+    def mock_delete_scrap_comment(scrap_slug_or_url, comment_slug, zenn_cmd="zenn"):
+        deleted_slugs.append(comment_slug)
+        return True
+
+    monkeypatch.setattr("zenn_stats_crawler.timeline.get_scrap_details", mock_get_scrap_details)
+    monkeypatch.setattr("zenn_stats_crawler.timeline.delete_scrap_comment", mock_delete_scrap_comment)
+
+    # keep_root=True should preserve c0_root_desc and only delete c1 and c2
+    count = delete_old_timeline_comments("test_scrap", keep_root=True)
+    assert count == 2
+    assert deleted_slugs == ["c1_old_timeline", "c2_old_timeline"]
+    assert "c0_root_desc" not in deleted_slugs
+
+

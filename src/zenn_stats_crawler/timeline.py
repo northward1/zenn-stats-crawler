@@ -4,6 +4,7 @@
 
 from dataclasses import dataclass
 from datetime import datetime
+import json
 import logging
 from pathlib import Path
 import re
@@ -336,4 +337,92 @@ def create_scrap(
         raise RuntimeError(f"Failed to create scrap: {stderr_msg}") from exc
     finally:
         Path(temp_file_path).unlink(missing_ok=True)
+
+
+def get_scrap_details(scrap_slug_or_url: str, zenn_cmd: str = "zenn") -> dict:
+    """
+    Zenn CLI を呼び出して Scrap の詳細およびコメント一覧を取得する。
+    """
+    cmd = [
+        zenn_cmd,
+        "scrap",
+        "get",
+        scrap_slug_or_url,
+        "--machine-readable",
+    ]
+    try:
+        result = subprocess.run(cmd, capture_output=True, text=True, check=True)
+        return json.loads(result.stdout.strip())
+    except subprocess.CalledProcessError as exc:
+        stderr_msg = exc.stderr.strip() if exc.stderr else str(exc)
+        logger.error(f"Zenn CLI scrap get エラー: {stderr_msg}")
+        raise RuntimeError(f"Failed to get scrap details: {stderr_msg}") from exc
+    except json.JSONDecodeError as exc:
+        raise RuntimeError(f"Failed to parse scrap get output as JSON: {exc}") from exc
+
+
+def delete_scrap_comment(
+    scrap_slug_or_url: str,
+    comment_slug: str,
+    zenn_cmd: str = "zenn",
+) -> bool:
+    """
+    Zenn CLI を呼び出して特定のコメントを削除する。
+    """
+    cmd = [
+        zenn_cmd,
+        "scrap",
+        "delete-comment",
+        scrap_slug_or_url,
+        comment_slug,
+        "--yes",
+        "--machine-readable",
+    ]
+    try:
+        subprocess.run(cmd, capture_output=True, text=True, check=True)
+        logger.info(f"Scrapコメント削除完了: slug={comment_slug}")
+        return True
+    except subprocess.CalledProcessError as exc:
+        stderr_msg = exc.stderr.strip() if exc.stderr else str(exc)
+        logger.warning(f"Zenn CLI delete-comment エラー ({comment_slug}): {stderr_msg}")
+        return False
+
+
+def delete_old_timeline_comments(
+    scrap_slug_or_url: str,
+    keep_root: bool = True,
+    zenn_cmd: str = "zenn",
+) -> int:
+    """
+    Scrap 内の古いコメントを削除する。
+    keep_root=True の場合、最初の投稿（コメント #0: 説明用投稿）は残し、
+    2番目以降のコメント（過去のタイムライン）のみを削除する。
+    削除したコメント数を返す。
+    """
+    try:
+        details = get_scrap_details(scrap_slug_or_url, zenn_cmd=zenn_cmd)
+    except Exception as exc:
+        logger.warning(f"既存コメント一覧の取得に失敗したため、古いコメントの削除をスキップします: {exc}")
+        return 0
+
+    comments = details.get("comments", [])
+    if not comments:
+        return 0
+
+    # keep_root=True なら最初のコメント（インデックス0）は説明用として保護
+    targets = comments[1:] if keep_root else comments
+    if not targets:
+        logger.info("削除対象の古いタイムラインコメントはありません。")
+        return 0
+
+    logger.info(f"古いタイムラインコメント {len(targets)} 件を削除中...")
+    deleted_count = 0
+    for c in targets:
+        c_slug = c.get("slug")
+        if c_slug and delete_scrap_comment(scrap_slug_or_url, c_slug, zenn_cmd=zenn_cmd):
+            deleted_count += 1
+
+    logger.info(f"古いタイムラインコメントのクリーンアップ完了: {deleted_count} 件削除")
+    return deleted_count
+
 

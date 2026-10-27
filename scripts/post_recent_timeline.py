@@ -18,6 +18,7 @@ from zenn_stats_crawler.config import Config
 from zenn_stats_crawler.timeline import (
     crawl_recent_timeline_items,
     create_scrap,
+    delete_old_timeline_comments,
     format_timeline_markdown,
     post_to_scrap,
     split_markdown_for_scrap,
@@ -64,6 +65,11 @@ def main():
         type=str,
         default=None,
         help="Markdown出力先ファイルパス (任意)",
+    )
+    parser.add_argument(
+        "--keep-old",
+        action="store_true",
+        help="既存Scrap投稿時に古いコメントを削除せずそのまま残す（デフォルトは古いタイムラインコメントを自動削除）",
     )
     parser.add_argument(
         "--dry-run",
@@ -142,6 +148,12 @@ def main():
 
     # 5. 既存Scrapへの追記投稿 (--scrap または環境変数)
     if args.scrap:
+        if not args.keep_old:
+            logger.info(f"既存Scrap ({args.scrap}) の古いタイムラインコメントをクリーンアップ中...")
+            deleted = delete_old_timeline_comments(args.scrap, keep_root=True)
+            if deleted > 0:
+                logger.info(f"古いタイムラインコメント {deleted} 件を削除しました。")
+
         logger.info(f"既存Scrap ({args.scrap}) へ新着タイムラインをコメント投稿中...")
         chunks = split_markdown_for_scrap(items, base_title=header_title)
         
