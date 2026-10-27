@@ -230,3 +230,7 @@ data/
 *.db-wal
 *.db-shm
 *.db-journal
+
+# Personal notes
+memo.md
+
