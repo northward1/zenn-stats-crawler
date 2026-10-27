@@ -122,8 +122,8 @@ def test_split_markdown_for_scrap():
     # When limit is small, splits into 2 chunks
     chunks_split = split_markdown_for_scrap(items, base_title="### Title", max_chars=1000)
     assert len(chunks_split) == 2
-    assert "(1〜10件)" in chunks_split[0]
-    assert "(11〜20件)" in chunks_split[1]
+    assert "### Title" in chunks_split[0]
+    assert "### 新着タイムライン (続き)" in chunks_split[1]
 
 
 def test_delete_old_timeline_comments(monkeypatch):
