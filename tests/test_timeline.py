@@ -54,6 +54,7 @@ def test_parse_timeline_item_from_html():
     assert item.title == "Title with | pipe"
     assert item.emoji == "🚀"
     assert item.username == "alice"
+    assert item.display_name == "Alice"
     assert item.published_at == "2026-10-27T10:00:00.000+09:00"
     assert item.liked_count == 5
 
@@ -66,6 +67,7 @@ def test_format_timeline_table():
             title="First Article | Review",
             emoji="📘",
             username="alice",
+            display_name="Alice",
             published_at="2026-10-27T10:00:00.000+09:00",
             liked_count=3,
         ),
@@ -75,6 +77,7 @@ def test_format_timeline_table():
             title="Second Article",
             emoji="💡",
             username="bob",
+            display_name="bob",
             published_at="2026-10-27T09:00:00.000+09:00",
             liked_count=0,
         ),
@@ -83,10 +86,10 @@ def test_format_timeline_table():
     table = format_timeline_table(items)
     lines = table.strip().split("\n")
 
-    assert lines[0] == "| favicon | title | user名 | 投稿時間 | like数 |"
-    assert lines[1] == "| :---: | :--- | :--- | :---: | :---: |"
-    assert r"📘 | [First Article \| Review](https://zenn.dev/alice/articles/art1) | [@alice](https://zenn.dev/alice) | 2026-10-27 10:00:00 | ❤️ 3" in lines[2]
-    assert r"💡 | [Second Article](https://zenn.dev/bob/articles/art2) | [@bob](https://zenn.dev/bob) | 2026-10-27 09:00:00 | ❤️ 0" in lines[3]
+    assert lines[0] == "| タイトル | ユーザー名 | 投稿日時 | いいね数 |"
+    assert lines[1] == "| :--- | :--- | :---: | :---: |"
+    assert r"[First Article \| Review](https://zenn.dev/alice/articles/art1) | [Alice (@alice)](https://zenn.dev/alice) | 2026-10-27 10:00:00 | ❤️ 3" in lines[2]
+    assert r"[Second Article](https://zenn.dev/bob/articles/art2) | [@bob](https://zenn.dev/bob) | 2026-10-27 09:00:00 | ❤️ 0" in lines[3]
 
 
 def test_split_markdown_for_scrap():
@@ -97,6 +100,7 @@ def test_split_markdown_for_scrap():
             title=f"Article {i} " + "X" * 100,
             emoji="📝",
             username=f"user{i}",
+            display_name=f"User {i}",
             published_at="2026-10-27T10:00:00.000+09:00",
             liked_count=i,
         )
@@ -112,3 +116,4 @@ def test_split_markdown_for_scrap():
     assert len(chunks_split) == 2
     assert "(1〜10件)" in chunks_split[0]
     assert "(11〜20件)" in chunks_split[1]
+

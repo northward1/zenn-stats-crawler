@@ -29,6 +29,7 @@ class TimelineItem:
     title: str
     emoji: str
     username: str
+    display_name: str
     published_at: str
     liked_count: int
 
@@ -66,6 +67,13 @@ def parse_timeline_item_from_html(html: str, url: str) -> Optional[TimelineItem]
 
     user = page_props.get("user") or article.get("user") or {}
     username = user.get("username") if isinstance(user, dict) else ""
+    display_name = user.get("name") if isinstance(user, dict) else ""
+
+    # URLからも username をフォールバック抽出可能
+    if not username:
+        m = re.match(r"^https://zenn\.dev/([^/]+)/articles/", url)
+        if m:
+            username = m.group(1)
 
     slug = article.get("slug") or url.rstrip("/").split("/")[-1]
     title = article.get("title") or slug
@@ -79,6 +87,7 @@ def parse_timeline_item_from_html(html: str, url: str) -> Optional[TimelineItem]
         title=title,
         emoji=emoji,
         username=username or "不明",
+        display_name=display_name or username or "不明",
         published_at=published_at,
         liked_count=liked_count,
     )
@@ -133,13 +142,14 @@ def crawl_recent_timeline_items(
     config = config or Config.from_env()
     sitemap_crawler = SitemapCrawler(client)
 
-    logger.info(f"最新 {limit} 件の記事URLをサイトマップから取得中...")
+    candidate_limit = max(limit, int(limit * 1.2) + 5)
+    logger.info(f"サイトマップから最新候補URLを {candidate_limit} 件抽出中 (最終出力: {limit} 件)...")
     urls = fetch_recent_article_urls(
         sitemap_crawler=sitemap_crawler,
         index_url=config.sitemap_index_url,
-        limit=limit,
+        limit=candidate_limit,
     )
-    logger.info(f"取得した記事URL: {len(urls)} 件。記事詳細のクロールを開始します。")
+    logger.info(f"取得した候補URL: {len(urls)} 件。記事詳細のクロールを開始します。")
 
     items: List[TimelineItem] = []
     for url in tqdm(urls, desc="最新記事クロール", disable=not show_progress):
@@ -153,34 +163,39 @@ def crawl_recent_timeline_items(
 
     # 公開日時の降順でソート（完全新着順）
     items.sort(key=lambda x: x.published_at or "", reverse=True)
-    logger.info(f"記事クロール完了: 有効件数 {len(items)} 件")
+    items = items[:limit]
+    logger.info(f"記事クロール完了: 有効件数 {len(items)} 件 (published_at 降順で上位 {limit} 件に確定)")
     return items
 
 
 def format_timeline_table(items: List[TimelineItem]) -> str:
     """
     記事一覧を指定フォーマットのMarkdownテーブルに整形する
-    カラム: | favicon | title | user名 | 投稿時間 | like数 |
+    カラム: | タイトル | ユーザー名 | 投稿日時 | いいね数 |
     """
     lines: List[str] = [
-        "| favicon | title | user名 | 投稿時間 | like数 |",
-        "| :---: | :--- | :--- | :---: | :---: |",
+        "| タイトル | ユーザー名 | 投稿日時 | いいね数 |",
+        "| :--- | :--- | :---: | :---: |",
     ]
 
     for item in items:
-        favicon = item.emoji or "📝"
         safe_title = escape_markdown_table_cell(item.title)
         title_link = f"[{safe_title}]({item.url})"
 
         if item.username and item.username != "不明":
-            user_link = f"[@{item.username}](https://zenn.dev/{item.username})"
+            if item.display_name and item.display_name != item.username:
+                safe_name = escape_markdown_table_cell(item.display_name)
+                user_label = f"{safe_name} (@{item.username})"
+            else:
+                user_label = f"@{item.username}"
+            user_link = f"[{user_label}](https://zenn.dev/{item.username})"
         else:
             user_link = "不明"
 
         dt_str = format_display_datetime(item.published_at)
         likes_str = f"❤️ {item.liked_count}"
 
-        lines.append(f"| {favicon} | {title_link} | {user_link} | {dt_str} | {likes_str} |")
+        lines.append(f"| {title_link} | {user_link} | {dt_str} | {likes_str} |")
 
     return "\n".join(lines)
 
