@@ -69,6 +69,14 @@ else
       --notes "$RELEASE_NOTES"
 fi
 
+# オプション: ZENN_TIMELINE_SCRAP_SLUG が設定されていれば最新100件をスクラップへ投稿
+if [ -n "${ZENN_TIMELINE_SCRAP_SLUG:-}" ]; then
+    echo "[$(date '+%Y-%m-%d %H:%M:%S')] 最新新着タイムラインをスクラップ ($ZENN_TIMELINE_SCRAP_SLUG) へ投稿中..."
+    uv run python scripts/post_recent_timeline.py --scrap "$ZENN_TIMELINE_SCRAP_SLUG" --limit 100 -q || {
+        echo "[$(date '+%Y-%m-%d %H:%M:%S')] 警告: スクラップへのタイムライン投稿に失敗しました。"
+    }
+fi
+
 echo "=========================================================="
 echo " [$(date '+%Y-%m-%d %H:%M:%S')] すべての処理が正常に完了しました。"
 echo "=========================================================="
