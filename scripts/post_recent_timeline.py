@@ -36,7 +36,9 @@ JST = timezone(timedelta(hours=9))
 
 
 def main():
-    parser = argparse.ArgumentParser(description="Zenn 完全新着タイムライン自動生成・投稿ツール")
+    parser = argparse.ArgumentParser(
+        description="Zenn 完全新着タイムライン自動生成・投稿ツール"
+    )
     parser.add_argument(
         "--scrap",
         type=str,
@@ -77,7 +79,8 @@ def main():
         help="Scrapへの投稿を行わず、生成結果の出力のみを行う",
     )
     parser.add_argument(
-        "-q", "--quiet",
+        "-q",
+        "--quiet",
         action="store_true",
         help="プログレスバーを非表示にする",
     )
@@ -101,7 +104,7 @@ def main():
         return
 
     now_jst = datetime.now(JST).strftime("%Y/%m/%d %H:%M")
-    header_title = f"### 新着タイムライン\n\n* 最終更新日時: {now_jst}"
+    header_title = f"## 新着タイムライン\n\n* 最終更新日時: {now_jst}"
 
     # 2. Markdownファイルの保存 (指定時)
     if args.output:
@@ -124,7 +127,7 @@ def main():
         logger.info(f"新規限定公開Scrapを作成中: タイトル='{args.title}'")
         chunks = split_markdown_for_scrap(items, base_title=header_title)
         initial_content = chunks[0]
-        
+
         scrap_url = create_scrap(
             title=args.title,
             markdown_content=initial_content,
@@ -133,7 +136,7 @@ def main():
             topics=["zenn"],
         )
         logger.info(f"✅ 限定公開Scrapを作成しました: {scrap_url}")
-        
+
         # 2分割された場合の後半コメントを投稿
         if len(chunks) > 1:
             slug = scrap_url.rstrip("/").split("/")[-1]
@@ -142,21 +145,27 @@ def main():
             logger.info(f"✅ 後半コメントを投稿しました: {comment_url}")
 
         print(f"\n[Scrap URL]: {scrap_url}")
-        print("次回以降はこのScrapに追記するために環境変数または引数で以下を指定してください:")
-        print(f"export ZENN_TIMELINE_SCRAP_SLUG=\"{scrap_url.rstrip('/').split('/')[-1]}\"")
+        print(
+            "次回以降はこのScrapに追記するために環境変数または引数で以下を指定してください:"
+        )
+        print(
+            f"export ZENN_TIMELINE_SCRAP_SLUG=\"{scrap_url.rstrip('/').split('/')[-1]}\""
+        )
         return
 
     # 5. 既存Scrapへの追記投稿 (--scrap または環境変数)
     if args.scrap:
         if not args.keep_old:
-            logger.info(f"既存Scrap ({args.scrap}) の古いタイムラインコメントをクリーンアップ中...")
+            logger.info(
+                f"既存Scrap ({args.scrap}) の古いタイムラインコメントをクリーンアップ中..."
+            )
             deleted = delete_old_timeline_comments(args.scrap, keep_root=True)
             if deleted > 0:
                 logger.info(f"古いタイムラインコメント {deleted} 件を削除しました。")
 
         logger.info(f"既存Scrap ({args.scrap}) へ新着タイムラインをコメント投稿中...")
         chunks = split_markdown_for_scrap(items, base_title=header_title)
-        
+
         for idx, chunk in enumerate(chunks, 1):
             comment_url = post_to_scrap(args.scrap, chunk)
             logger.info(f"✅ コメント投稿成功 ({idx}/{len(chunks)}): {comment_url}")
