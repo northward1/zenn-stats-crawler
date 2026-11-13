@@ -4,9 +4,14 @@
 
 プライバシーや利用規約、倫理的な配慮のため、URLや記事タイトル、ユーザー名、Publication名をソルト付き SHA-256 でハッシュ化して保存しています。
 
+## ダッシュボード
+
+[`https://northward1.github.io/zenn-stats-crawler/`](https://northward1.github.io/zenn-stats-crawler/)でダッシュボードを見ることができます。  
+データが更新される度にダッシュボードも更新しているため、常に最新のデータが使用されます。
+
 ## データベースのダウンロード
 
-最新の収集済み SQLite データベースは、GitHub Releases から直接ダウンロード可能です。
+最新の収集済み SQLite データベースは、GitHub Releases から直接ダウンロードできます。
 
 * **[最新版データベース (zenn_stats.db.gz)](https://github.com/northward1/zenn-stats-crawler/releases/latest/download/zenn_stats.db.gz)**
 
@@ -30,7 +35,8 @@ uv sync
 ## 使い方
 
 ### 環境変数の設定
-ハッシュ化ソルトおよび連絡先メールアドレスを設定します（引数でも指定可能）。
+
+ハッシュ化ソルトおよび連絡先メールアドレスを設定します。
 
 ```bash
 export MAIL_ADDRESS="your_email@example.com"
