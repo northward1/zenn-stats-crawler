@@ -330,3 +330,43 @@ def test_stats_crawler_expiration_and_flow(tmp_path: Path, monkeypatch):
 
     crawler.db.close()
 
+
+def test_cli_sigterm_closes_db(tmp_path, monkeypatch):
+    import os
+    import signal
+    import sys
+    from unittest.mock import MagicMock
+    from zenn_stats_crawler import cli
+
+    db_path = tmp_path / "test_sigterm.db"
+    monkeypatch.setattr(
+        sys,
+        "argv",
+        ["zenn-stats-crawler", "--db-path", str(db_path), "-q"],
+    )
+
+    def fake_run(self, **kwargs):
+        # WALに書き込みを発生させてから SIGTERM を送信する
+        self.db.insert_failed_snapshot("hash1", "err")
+        os.kill(os.getpid(), signal.SIGTERM)
+
+    monkeypatch.setattr(cli.StatsCrawler, "run", fake_run)
+
+    prev_handler = signal.getsignal(signal.SIGTERM)
+    try:
+        with pytest.raises(SystemExit) as exc_info:
+            cli.main()
+        assert exc_info.value.code == 143
+    finally:
+        signal.signal(signal.SIGTERM, prev_handler)
+
+    # 正常に db.close() されたため WAL ファイルがチェックポイントされ削除されていること
+    assert db_path.exists()
+    assert not (tmp_path / "test_sigterm.db-wal").exists()
+    # 書き込んだデータも本体DBに残っていること
+    check_db = Database(db_path)
+    cur = check_db.conn.cursor()
+    cur.execute("SELECT url_hash FROM articles;")
+    assert cur.fetchall() == [("hash1",)]
+    check_db.close()
+

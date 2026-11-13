@@ -47,6 +47,9 @@ if [ ! -f "$DB_FILE" ]; then
     exit 1
 fi
 
+echo "[$(date '+%Y-%m-%d %H:%M:%S')] SQLite WAL チェックポイントを実行中..."
+uv run python -c "import sqlite3, sys; c = sqlite3.connect(sys.argv[1]); c.execute('PRAGMA wal_checkpoint(TRUNCATE);'); c.close()" "$DB_FILE"
+
 echo "[$(date '+%Y-%m-%d %H:%M:%S')] データベースを gzip 圧縮中 ($DB_FILE -> $GZ_FILE)..."
 gzip -c "$DB_FILE" > "$GZ_FILE.tmp"
 mv "$GZ_FILE.tmp" "$GZ_FILE"

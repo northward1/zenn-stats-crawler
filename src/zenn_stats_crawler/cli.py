@@ -1,5 +1,6 @@
 import argparse
 import logging
+import signal
 import sys
 from pathlib import Path
 
@@ -116,6 +117,14 @@ def main() -> None:
 
     db = Database(config.db_path)
     crawler = StatsCrawler(config=config, db=db)
+
+    def _handle_sigterm(signum: int, frame: object) -> None:
+        logging.getLogger(__name__).info(
+            "SIGTERM を受信しました。DB接続をクローズして終了します。"
+        )
+        raise SystemExit(143)
+
+    signal.signal(signal.SIGTERM, _handle_sigterm)
 
     # プログレスバーの表示制御
     if args.show_progress is not None:
