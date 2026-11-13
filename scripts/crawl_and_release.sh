@@ -73,6 +73,11 @@ else
       --notes "$RELEASE_NOTES"
 fi
 
+echo "[$(date '+%Y-%m-%d %H:%M:%S')] GitHub Pages デプロイワークフローを起動中..."
+gh workflow run deploy-pages.yml || {
+    echo "[$(date '+%Y-%m-%d %H:%M:%S')] 警告: deploy-pages.yml の起動に失敗しました。"
+}
+
 # オプション: ZENN_TIMELINE_SCRAP_SLUG が設定されていれば最新100件をスクラップへ投稿
 # if [ -n "${ZENN_TIMELINE_SCRAP_SLUG:-}" ]; then
 #     echo "[$(date '+%Y-%m-%d %H:%M:%S')] 最新新着タイムラインをスクラップ ($ZENN_TIMELINE_SCRAP_SLUG) へ投稿中..."

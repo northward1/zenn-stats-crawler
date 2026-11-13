@@ -225,7 +225,7 @@ env/
 venv/
 
 # SQLite database & journals
-data/
+/data/
 *.db
 *.db-wal
 *.db-shm
@@ -234,3 +234,9 @@ data/
 # Personal notes
 memo.md
 
+
+# Observable Framework dashboard
+dashboard/node_modules/
+dashboard/dist/
+dashboard/.observablehq/
+dashboard/src/.observablehq/
