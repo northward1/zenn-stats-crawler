@@ -6,7 +6,7 @@ import os
 import sqlite3
 import sys
 from collections import Counter, defaultdict
-from datetime import datetime, timezone
+from datetime import date, datetime, timedelta, timezone
 from pathlib import Path
 
 
@@ -48,6 +48,7 @@ def main() -> None:
     ).fetchone()[0]
 
     monthly_count = defaultdict(int)
+    daily_count = defaultdict(int)
     monthly_authors = defaultdict(set)
     monthly_auth_sum = defaultdict(int)
     monthly_total_sum = defaultdict(int)
@@ -99,6 +100,9 @@ def main() -> None:
             continue
 
         total_articles += 1
+        if len(published_at) >= 10 and published_at[7] == "-":
+            day = published_at[:10]
+            daily_count[day] += 1
         auth_likes = max(0, int(auth_likes))
         total_likes = max(0, int(total_likes))
 
@@ -136,6 +140,15 @@ def main() -> None:
                 pass
 
     conn.close()
+
+    daily = []
+    max_date_str = max(daily_count.keys()) if daily_count else None
+    if max_date_str:
+        max_d = date.fromisoformat(max_date_str)
+        start_d = max_d - timedelta(days=399)
+        for i in range(400):
+            d_str = (start_d + timedelta(days=i)).isoformat()
+            daily.append({"date": d_str, "articles": daily_count[d_str]})
 
     months = sorted(monthly_count.keys())
 
@@ -236,10 +249,12 @@ def main() -> None:
             "latest_crawled_at": latest_crawled_at,
             "min_month": months[0] if months else None,
             "max_month": months[-1] if months else None,
+            "max_date": max_date_str,
             "generated_at": datetime.now(timezone.utc).isoformat(),
         },
         "months": months,
         "monthly": monthly,
+        "daily": daily,
         "tech_idea": tech_idea,
         "publications": publications,
         "topics": {
