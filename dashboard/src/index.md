@@ -15,6 +15,7 @@ toc: true
 const data = await FileAttachment("data/stats.json").json();
 const months = data.months;
 const parseMonth = (m) => new Date(`${m}-01T00:00:00+09:00`);
+const parseDate = (d) => new Date(`${d}T00:00:00+09:00`);
 const fmtJst = (iso) =>
   iso
     ? new Date(iso).toLocaleString("ja-JP", { timeZone: "Asia/Tokyo" })
@@ -135,6 +136,82 @@ function renderOverviewChart(field, yLabel, color, marginLeft = 55) {
   <div class="card">
     <h3>平均${likeLabel}</h3>
     ${renderOverviewChart("likes_avg", `平均${likeLabel}`, "#8b5cf6", 50)}
+  </div>
+</div>
+
+```js
+const recentDaysWindow = view(
+  Inputs.radio(["14", "30", "90", "180", "365"], {
+    label: "直近N日の表示期間",
+    value: "90",
+    format: (d) => `直近 ${d} 日`,
+  })
+);
+```
+
+```js
+const dailyWithMa = (data.daily || []).map((d, i, arr) => {
+  const start = Math.max(0, i - 6);
+  const windowSlice = arr.slice(start, i + 1);
+  const ma7 =
+    windowSlice.reduce((sum, item) => sum + item.articles, 0) /
+    windowSlice.length;
+  return {
+    ...d,
+    dateObj: parseDate(d.date),
+    ma7: Math.round(ma7 * 10) / 10,
+  };
+});
+
+const recentDailyData = dailyWithMa.slice(-Number(recentDaysWindow));
+```
+
+<div class="grid grid-cols-1">
+  <div class="card">
+    <h3>直近 ${recentDaysWindow} 日間の投稿件数推移（日別・7日移動平均）</h3>
+    ${Plot.plot({
+      width: 1200,
+      height: 300,
+      marginLeft: 55,
+      x: { label: null, type: "utc" },
+      y: { label: "記事数", grid: true },
+      color: {
+        domain: ["日別投稿件数", "7日移動平均"],
+        range: ["#3ea8ff", "#f97316"],
+        legend: true,
+      },
+      marks: [
+        Plot.areaY(recentDailyData, {
+          x: "dateObj",
+          y: "articles",
+          fill: "#3ea8ff",
+          fillOpacity: 0.18,
+        }),
+        Plot.lineY(recentDailyData, {
+          x: "dateObj",
+          y: "articles",
+          stroke: () => "日別投稿件数",
+          strokeWidth: 1.5,
+          strokeOpacity: 0.75,
+        }),
+        Plot.lineY(recentDailyData, {
+          x: "dateObj",
+          y: "ma7",
+          stroke: () => "7日移動平均",
+          strokeWidth: 2.5,
+        }),
+        Plot.dot(recentDailyData, {
+          x: "dateObj",
+          y: "articles",
+          r: 2.5,
+          fill: "#3ea8ff",
+          tip: true,
+          title: (d) =>
+            `${d.date}\n日別記事数: ${d.articles.toLocaleString("ja-JP")} 件\n7日移動平均: ${d.ma7.toFixed(1)} 件`,
+        }),
+        Plot.ruleY([0]),
+      ],
+    })}
   </div>
 </div>
 
