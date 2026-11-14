@@ -9,7 +9,13 @@ toc: true
   :root {
     --observablehq-max-width: 1400px;
   }
+  p {
+    max-width: none;
+  }
 </style>
+
+このページにあるグラフは、[northward1/zenn-stats-crawler](https://github.com/northward1/zenn-stats-crawler)で収集したデータを使用しています。  
+データの詳細については、上記のリポジトリを確認してください。
 
 ```js
 const data = await FileAttachment("data/stats.json").json();
