@@ -20,8 +20,9 @@ toc: true
 ```js
 const data = await FileAttachment("data/stats.json").json();
 const months = data.months;
-const parseMonth = (m) => new Date(`${m}-01T00:00:00+09:00`);
-const parseDate = (d) => new Date(`${d}T00:00:00+09:00`);
+const parseMonth = (m) => new Date(`${m}-01T00:00:00Z`);
+const parseDate = (d) => new Date(`${d}T00:00:00Z`);
+const fmtMonth = (m) => (m ? m.replace("-", "/") : "-");
 const fmtJst = (iso) =>
   iso
     ? new Date(iso).toLocaleString("ja-JP", { timeZone: "Asia/Tokyo" })
@@ -35,11 +36,11 @@ const fmtJst = (iso) =>
   </div>
   <div class="card">
     <h2>対象期間</h2>
-    <span class="big">${data.meta.min_month} 〜 ${data.meta.max_month}</span>
+    <span class="big">${fmtMonth(data.meta.min_month)} 〜 ${fmtMonth(data.meta.max_month)}</span>
   </div>
   <div class="card">
     <h2>最終クロール日時 (JST)</h2>
-    <span class="big" style="font-size: 1.25rem;">${fmtJst(data.meta.latest_crawled_at)}</span>
+    <span class="big">${fmtJst(data.meta.latest_crawled_at)}</span>
   </div>
 </div>
 
@@ -88,11 +89,11 @@ function renderOverviewChart(field, yLabel, color, marginLeft = 55) {
           fillOpacity: 0.2,
         }),
         Plot.lineY(monthlyData, {
-          x: "date",
+          x: { value: "date", label: "月" },
           y: field,
           stroke: color,
           strokeWidth: 2,
-          tip: true,
+          tip: { format: { x: "%Y/%m" } },
         }),
         Plot.ruleY([0]),
       ],
@@ -112,10 +113,10 @@ function renderOverviewChart(field, yLabel, color, marginLeft = 55) {
       Plot.lineY(monthlyData, {
         x: "monthNum",
         y: field,
-        stroke: "year",
+        stroke: { value: "year", label: "年" },
         strokeWidth: 2,
         marker: "dot",
-        tip: true,
+        tip: { format: { x: (d) => `${d}月` } },
       }),
       Plot.ruleY([0]),
     ],
@@ -213,7 +214,7 @@ const recentDailyData = dailyWithMa.slice(-Number(recentDaysWindow));
           fill: "#3ea8ff",
           tip: true,
           title: (d) =>
-            `${d.date}\n日別記事数: ${d.articles.toLocaleString("ja-JP")} 件\n7日移動平均: ${d.ma7.toFixed(1)} 件`,
+            `${d.date.replaceAll("-", "/")}\n日別記事数: ${d.articles.toLocaleString("ja-JP")} 件\n7日移動平均: ${d.ma7.toFixed(1)} 件`,
         }),
         Plot.ruleY([0]),
       ],
@@ -419,7 +420,7 @@ function renderBumpChart(bump, valueLabel) {
         clip: true,
         tip: true,
         title: (d) =>
-          `${d.month} | #${d.rank} ${d.topic}\n${valueLabel}: ${d.value.toLocaleString("ja-JP")}`,
+          `${fmtMonth(d.month)} | #${d.rank} ${d.topic}\n${valueLabel}: ${d.value.toLocaleString("ja-JP")}`,
       }),
       Plot.text(lastRows, {
         x: "date",
@@ -487,11 +488,11 @@ function renderTechIdeaCompare(targetType) {
     },
     marks: [
       Plot.lineY(rows, {
-        x: "date",
+        x: { value: "date", label: "月" },
         y: "pct",
         stroke: "series",
         strokeWidth: 2,
-        tip: true,
+        tip: { format: { x: "%Y/%m" } },
       }),
       Plot.ruleY([0]),
     ],
@@ -555,11 +556,11 @@ const pubColor = {
       color: pubColor,
       marks: [
         Plot.lineY(pubFiltered, {
-          x: "date",
+          x: { value: "date", label: "月" },
           y: "likes_sum",
           stroke: "group",
           strokeWidth: 2,
-          tip: true,
+          tip: { format: { x: "%Y/%m" } },
         }),
         Plot.ruleY([0]),
       ],
@@ -576,11 +577,11 @@ const pubColor = {
       color: pubColor,
       marks: [
         Plot.lineY(pubFiltered, {
-          x: "date",
+          x: { value: "date", label: "月" },
           y: "likes_avg",
           stroke: "group",
           strokeWidth: 2,
-          tip: true,
+          tip: { format: { x: "%Y/%m" } },
         }),
         Plot.ruleY([0]),
       ],
@@ -597,11 +598,11 @@ const pubColor = {
       color: pubColor,
       marks: [
         Plot.lineY(pubFiltered, {
-          x: "date",
+          x: { value: "date", label: "月" },
           y: "zero_pct",
           stroke: "group",
           strokeWidth: 2,
-          tip: true,
+          tip: { format: { x: "%Y/%m" } },
         }),
         Plot.ruleY([0]),
       ],
@@ -618,11 +619,11 @@ const pubColor = {
       color: pubColor,
       marks: [
         Plot.lineY(pubFiltered, {
-          x: "date",
+          x: { value: "date", label: "月" },
           y: "gini",
           stroke: "group",
           strokeWidth: 2,
-          tip: true,
+          tip: { format: { x: "%Y/%m" } },
         }),
         Plot.ruleY([0]),
       ],
