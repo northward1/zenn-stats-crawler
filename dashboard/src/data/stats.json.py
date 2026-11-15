@@ -69,17 +69,34 @@ def main() -> None:
     topic_stats = defaultdict(lambda: defaultdict(lambda: [0, 0, 0]))
 
     query = """
+        WITH latest_articles AS (
+            SELECT
+                published_at,
+                article_type,
+                user_name_hash,
+                COALESCE(authenticated_liked_count, 0) AS auth_likes,
+                COALESCE(liked_count, 0) AS total_likes,
+                topics,
+                publication_plan,
+                publication_name_hash,
+                ROW_NUMBER() OVER (
+                    PARTITION BY url_hash
+                    ORDER BY crawled_at DESC, id DESC
+                ) AS rn
+            FROM articles
+            WHERE status = 'success' AND published_at IS NOT NULL
+        )
         SELECT
             published_at,
             article_type,
             user_name_hash,
-            COALESCE(authenticated_liked_count, 0),
-            COALESCE(liked_count, 0),
+            auth_likes,
+            total_likes,
             topics,
             publication_plan,
             publication_name_hash
-        FROM articles
-        WHERE status = 'success' AND published_at IS NOT NULL
+        FROM latest_articles
+        WHERE rn = 1
     """
 
     total_articles = 0
