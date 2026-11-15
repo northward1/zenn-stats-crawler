@@ -543,91 +543,61 @@ const pubColor = {
   range: ["#64748b", "#3ea8ff", "#10b981", "#a855f7"],
   legend: true,
 };
+
+function renderPubChart(field, yLabel, marginLeft = 50, yDomain = undefined) {
+  return Plot.plot({
+    height: 300,
+    marginLeft,
+    x: { label: null, type: "utc" },
+    y: {
+      label: yLabel,
+      grid: true,
+      ...(yDomain ? { domain: yDomain } : {}),
+    },
+    color: pubColor,
+    marks: [
+      Plot.lineY(pubFiltered, {
+        x: { value: "date", label: "月" },
+        y: field,
+        stroke: "group",
+        strokeWidth: 2,
+        tip: { format: { x: "%Y/%m" } },
+      }),
+      Plot.ruleY([0]),
+    ],
+  });
+}
 ```
 
 <div class="grid grid-cols-2">
   <div class="card">
+    <h3>投稿件数</h3>
+    ${renderPubChart("articles", "記事数", 55)}
+  </div>
+
+  <div class="card">
+    <h3>著者数</h3>
+    ${renderPubChart("authors", "ユニーク著者数", 55)}
+  </div>
+
+  <div class="card">
     <h3>合計${likeLabel}</h3>
-    ${Plot.plot({
-      height: 300,
-      marginLeft: 65,
-      x: { label: null, type: "utc" },
-      y: { label: `合計${likeLabel}`, grid: true },
-      color: pubColor,
-      marks: [
-        Plot.lineY(pubFiltered, {
-          x: { value: "date", label: "月" },
-          y: "likes_sum",
-          stroke: "group",
-          strokeWidth: 2,
-          tip: { format: { x: "%Y/%m" } },
-        }),
-        Plot.ruleY([0]),
-      ],
-    })}
+    ${renderPubChart("likes_sum", `合計${likeLabel}`, 65)}
   </div>
 
   <div class="card">
     <h3>平均${likeLabel}</h3>
-    ${Plot.plot({
-      height: 300,
-      marginLeft: 50,
-      x: { label: null, type: "utc" },
-      y: { label: `平均${likeLabel}`, grid: true },
-      color: pubColor,
-      marks: [
-        Plot.lineY(pubFiltered, {
-          x: { value: "date", label: "月" },
-          y: "likes_avg",
-          stroke: "group",
-          strokeWidth: 2,
-          tip: { format: { x: "%Y/%m" } },
-        }),
-        Plot.ruleY([0]),
-      ],
-    })}
+    ${renderPubChart("likes_avg", `平均${likeLabel}`, 50)}
   </div>
 
   <div class="card">
     <h3>0 Like 記事の割合 (%)</h3>
-    ${Plot.plot({
-      height: 300,
-      marginLeft: 50,
-      x: { label: null, type: "utc" },
-      y: { label: "0 Like 割合 (%)", domain: [0, 100], grid: true },
-      color: pubColor,
-      marks: [
-        Plot.lineY(pubFiltered, {
-          x: { value: "date", label: "月" },
-          y: "zero_pct",
-          stroke: "group",
-          strokeWidth: 2,
-          tip: { format: { x: "%Y/%m" } },
-        }),
-        Plot.ruleY([0]),
-      ],
-    })}
+    ${renderPubChart("zero_pct", "0 Like 割合 (%)", 50, [0, 100])}
   </div>
 
   <div class="card">
     <h3>${likeLabel} ジニ係数</h3>
-    ${Plot.plot({
-      height: 300,
-      marginLeft: 50,
-      x: { label: null, type: "utc" },
-      y: { label: "ジニ係数 (0〜1)", domain: [0, 1], grid: true },
-      color: pubColor,
-      marks: [
-        Plot.lineY(pubFiltered, {
-          x: { value: "date", label: "月" },
-          y: "gini",
-          stroke: "group",
-          strokeWidth: 2,
-          tip: { format: { x: "%Y/%m" } },
-        }),
-        Plot.ruleY([0]),
-      ],
-    })}
+    ${renderPubChart("gini", "ジニ係数 (0〜1)", 50, [0, 1])}
   </div>
 </div>
 

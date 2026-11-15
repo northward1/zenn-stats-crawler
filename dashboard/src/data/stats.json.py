@@ -64,6 +64,7 @@ def main() -> None:
 
     pub_auth_vals = defaultdict(lambda: defaultdict(list))
     pub_total_vals = defaultdict(lambda: defaultdict(list))
+    pub_authors = defaultdict(lambda: defaultdict(set))
 
     topic_stats = defaultdict(lambda: defaultdict(lambda: [0, 0, 0]))
 
@@ -125,6 +126,8 @@ def main() -> None:
         pub_group = "無所属" if pub_hash is None else (pub_plan or "other")
         pub_auth_vals[month][pub_group].append(auth_likes)
         pub_total_vals[month][pub_group].append(total_likes)
+        if user_hash:
+            pub_authors[month][pub_group].add(user_hash)
 
         if topics_raw:
             try:
@@ -204,6 +207,7 @@ def main() -> None:
                     "month": m,
                     "group": pg,
                     "articles": n_pg,
+                    "authors": len(pub_authors[m][pg]),
                     "auth_likes_sum": a_s,
                     "auth_likes_avg": round(a_s / n_pg, 2) if n_pg else 0,
                     "auth_zero_pct": round(a_zero / n_pg * 100, 2) if n_pg else 0,
