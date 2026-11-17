@@ -8,5 +8,6 @@ export default {
     { name: "クロール状況", path: "/crawl-status" },
   ],
   toc: true,
+  pager: false,
   footer: "Built with Observable Framework from zenn-stats-crawler data.",
 };
