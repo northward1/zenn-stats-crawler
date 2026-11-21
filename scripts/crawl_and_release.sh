@@ -57,12 +57,28 @@ mv "$GZ_FILE.tmp" "$GZ_FILE"
 FILE_SIZE=$(du -h "$GZ_FILE" | cut -f1)
 echo "[$(date '+%Y-%m-%d %H:%M:%S')] 圧縮完了 (サイズ: $FILE_SIZE)"
 
+echo "[$(date '+%Y-%m-%d %H:%M:%S')] リリース用の統計情報を集計中..."
+read -r RECORD_COUNT ARTICLE_COUNT < <(
+    uv run python -c "
+import sqlite3, sys
+c = sqlite3.connect(f'file:{sys.argv[1]}?mode=ro', uri=True)
+records = c.execute('SELECT COUNT(*) FROM articles').fetchone()[0]
+articles = c.execute(\"SELECT COUNT(DISTINCT url_hash) FROM articles WHERE status = 'success'\").fetchone()[0]
+c.close()
+print(f'{records:,} {articles:,}')
+" "$DB_FILE"
+)
+
 echo "[$(date '+%Y-%m-%d %H:%M:%S')] GitHub Releases ($RELEASE_TAG) へアップロード中..."
 
-UPDATED_AT="$(date '+%Y-%m-%d %H:%M:%S %Z')"
-RELEASE_NOTES="Auto-updated daily snapshot.
-- Last updated: ${UPDATED_AT}
-- File size: ${FILE_SIZE}"
+UPDATED_AT="$(TZ='Asia/Tokyo' date '+%Y/%m/%d %H:%M:%S')"
+RELEASE_NOTES="クローラーで収集したデータです。クロールは午前0時から午前6時にかけて行われ、毎日データを更新しています。
+
+* 最終更新日: ${UPDATED_AT}
+* レコード数: ${RECORD_COUNT}
+* 記事数: ${ARTICLE_COUNT}
+
+[クロール状況](https://northward1.github.io/zenn-stats-crawler/crawl-status)を確認するとより詳細なデータを見ることができます。"
 
 if gh release view "$RELEASE_TAG" >/dev/null 2>&1; then
     gh release edit "$RELEASE_TAG" --notes "$RELEASE_NOTES"
